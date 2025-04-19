@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Comparator</title>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; padding: 20px; max-width: 1200px; margin: auto; }
+        h1, h2 { text-align: center; }
+        .container { display: flex; gap: 20px; }
+        .form-section { flex: 1; }
+        .results-section { flex: 2; border-left: 1px solid #ccc; padding-left: 20px; }
+        textarea { width: 95%; min-height: 150px; margin-bottom: 10px; padding: 8px; }
+        label { display: block; margin-bottom: 5px; }
+        fieldset { border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; }
+        legend { font-weight: bold; }
+        button { padding: 10px 20px; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 4px; }
+        button:hover { background-color: #0056b3; }
+        .result-box { border: 1px solid #eee; padding: 15px; margin-bottom: 15px; background-color: #f9f9f9; border-radius: 5px; }
+        .result-box h3 { margin-top: 0; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 5px;}
+        .result-box pre { white-space: pre-wrap; word-wrap: break-word; background-color: #fff; padding: 10px; border: 1px solid #eee; border-radius: 3px; }
+        .error { color: red; font-weight: bold; }
+        .config-error { background-color: #ffecec; border: 1px solid red; padding: 10px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <h1>LLM Comparator</h1>
+
+    {% if config_errors %}
+        <div class="config-error">
+            <h2>Configuration Issues Detected:</h2>
+            <ul>
+                {% for error in config_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+            <p>Please check your <code>.env</code> file and ensure the corresponding services are available.</p>
+        </div>
+    {% endif %}
+
+
+    <div class="container">
+        <div class="form-section">
+            <h2>Input</h2>
+            <form action="/compare" method="post">
+                <label for="prompt">Enter your prompt:</label>
+                <textarea id="prompt" name="prompt" required>{{ prompt_text or '' }}</textarea>
+
+                <fieldset>
+                    <legend>Select Models to Query:</legend>
+                     {% for id, name in available_models.items() %}
+                        <div>
+                            <input type="checkbox" id="{{ id }}" name="models" value="{{ id }}"
+                                   {% if id in selected_models %}checked{% endif %}
+                                   {% if id in config_errors_detail and config_errors_detail[id] %}disabled{% endif %}>
+                            <label for="{{ id }}">{{ name }}
+                                {% if id in config_errors_detail and config_errors_detail[id] %}
+                                    <span class="error"> (Config Error)</span>
+                                {% endif %}
+                            </label>
+                        </div>
+                     {% endfor %}
+                </fieldset>
+
+                <button type="submit">Compare Responses</button>
+            </form>
+        </div>
+
+        <div class="results-section">
+            <h2>Results</h2>
+            {% if results %}
+                {% for model_id, result in results.items() %}
+                    <div class="result-box">
+                        <h3>{{ available_models.get(model_id, model_id) }}</h3>
+                        {% if result.success %}
+                            <pre>{{ result.response }}</pre>
+                        {% else %}
+                            <p class="error">Error: {{ result.error }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>Submit a prompt and select models to see results here.</p>
+            {% endif %}
+             {% if duration %}
+                 <p><i>Comparison took {{ "%.2f"|format(duration) }} seconds.</i></p>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+</html>
