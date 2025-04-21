@@ -47,6 +47,8 @@ config_errors_detail = {} # Store specific errors per model ID
 
 # --- OpenAI Client ---
 openai_api_key = os.getenv("OPENAI_API_KEY")
+openai_model = os.getenv("OPENAI_MODEL", "gpt-4.1-2025-04-14") # Default to Haiku for speed/cost
+
 openai_client = None
 if openai_api_key:
     try:
@@ -130,7 +132,7 @@ async def get_openai_response(prompt: str) -> dict:
         # Using chat completions endpoint
         response = await asyncio.to_thread(
             openai_client.chat.completions.create,
-            model="gpt-3.5-turbo",  # Or choose another model like gpt-4
+            model=openai_model,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=1000, # Limit response length
             temperature=0.7 # Adjust creativity
